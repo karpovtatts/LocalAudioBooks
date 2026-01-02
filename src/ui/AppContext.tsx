@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import type { Book, Settings, Progress } from '../storage';
-import { getAllBooks, loadSettings, saveSettings as saveSettingsToStorage, loadProgress } from '../storage';
+import { loadAllBooks, loadSettings, saveSettings as saveSettingsToStorage, loadProgress } from '../storage';
 import { getState, onStateChange, loadBook, type PlayerState } from '../player';
 import { requestFolderAccess, scanFolder } from '../library';
 
@@ -76,7 +76,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshBooks = useCallback(async () => {
     setIsLoadingBooks(true);
     try {
-      const loadedBooks = await getAllBooks();
+      const loadedBooks = await loadAllBooks();
       setBooks(loadedBooks);
     } catch (error) {
       console.error('Ошибка загрузки книг:', error);
@@ -94,7 +94,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const folderHandle = await requestFolderAccess();
       if (!folderHandle) {
-        return; // Пользователь отменил выбор
+        // Если File System Access API не поддерживается, используем fallback
+        // В этом случае requestFolderAccess уже обработал выбор через input
+        // и вернул null, что означает отмену или неподдержку
+        // Для полной поддержки fallback нужно доработать scanFolder
+        return; // Пользователь отменил выбор или браузер не поддерживает API
       }
       
       setIsLoadingBooks(true);
@@ -104,7 +108,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await refreshBooks();
     } catch (error) {
       console.error('Ошибка добавления папки:', error);
-      alert(`Ошибка добавления папки: ${error instanceof Error ? error.message : String(error)}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      // Улучшенная обработка ошибок с более понятными сообщениями
+      if (errorMessage.includes('File System Access API')) {
+        alert('Ваш браузер не поддерживает выбор папок. Пожалуйста, используйте современный браузер (Chrome, Edge, Opera).');
+      } else {
+        alert(`Ошибка добавления папки: ${errorMessage}`);
+      }
     } finally {
       setIsLoadingBooks(false);
     }

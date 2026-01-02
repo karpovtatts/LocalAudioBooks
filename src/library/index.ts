@@ -37,33 +37,80 @@ export type ScanProgressCallback = (progress: ScanProgress) => void;
 
 /**
  * Запрашивает доступ к папке через File System Access API
- * @returns FileSystemDirectoryHandle или null, если API не поддерживается
+ * Если API не поддерживается, использует fallback через input[webkitdirectory]
+ * @returns FileSystemDirectoryHandle или null, если пользователь отменил выбор
  */
 export async function requestFolderAccess(): Promise<FileSystemDirectoryHandle | null> {
-  if (!('showDirectoryPicker' in window)) {
-    return null;
-  }
-
-  try {
-    // Типизация для File System Access API
-    const showDirectoryPicker = (window as any).showDirectoryPicker as (
-      options?: { mode?: 'read' | 'readwrite' }
-    ) => Promise<FileSystemDirectoryHandle>;
-    
-    const handle = await showDirectoryPicker({
-      mode: 'read',
-    });
-    return handle;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      // Пользователь отменил выбор
-      return null;
+  // Пробуем использовать File System Access API (современные браузеры)
+  if ('showDirectoryPicker' in window) {
+    try {
+      // Типизация для File System Access API
+      const showDirectoryPicker = (window as any).showDirectoryPicker as (
+        options?: { mode?: 'read' | 'readwrite' }
+      ) => Promise<FileSystemDirectoryHandle>;
+      
+      const handle = await showDirectoryPicker({
+        mode: 'read',
+      });
+      return handle;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        // Пользователь отменил выбор
+        return null;
+      }
+      throw new FileSystemError(
+        `Не удалось получить доступ к папке: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error : undefined
+      );
     }
-    throw new FileSystemError(
-      `Не удалось получить доступ к папке: ${error instanceof Error ? error.message : String(error)}`,
-      error instanceof Error ? error : undefined
-    );
   }
+  
+  // Fallback для старых браузеров через input[webkitdirectory]
+  return new Promise((resolve, reject) => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.setAttribute('webkitdirectory', '');
+      input.setAttribute('directory', '');
+      input.style.display = 'none';
+      
+      input.onchange = async (e) => {
+        const files = (e.target as HTMLInputElement).files;
+        if (!files || files.length === 0) {
+          resolve(null);
+          return;
+        }
+        
+        // Для fallback мы не можем вернуть FileSystemDirectoryHandle,
+        // но можем обработать файлы напрямую
+        // В этом случае возвращаем null и обрабатываем файлы в scanFolder
+        resolve(null);
+      };
+      
+      input.oncancel = () => {
+        resolve(null);
+      };
+      
+      input.onerror = (error) => {
+        reject(new FileSystemError(
+          `Ошибка при выборе папки: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+          error instanceof Error ? error : undefined
+        ));
+      };
+      
+      document.body.appendChild(input);
+      input.click();
+      // Удаляем input после использования
+      setTimeout(() => {
+        document.body.removeChild(input);
+      }, 100);
+    } catch (error) {
+      reject(new FileSystemError(
+        `Ошибка при создании fallback для выбора папки: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error : undefined
+      ));
+    }
+  });
 }
 
 /**

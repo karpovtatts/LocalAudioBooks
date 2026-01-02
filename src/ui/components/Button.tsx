@@ -2,7 +2,7 @@
  * Базовый компонент кнопки
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger';
@@ -10,7 +10,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
-export function Button({
+export const Button = memo(function Button({
   variant = 'primary',
   size = 'md',
   className = '',
@@ -34,10 +34,11 @@ export function Button({
   return (
     <button
       className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      aria-label={typeof children === 'string' ? children : undefined}
       {...props}
     >
       {children}
     </button>
   );
-}
+});
 

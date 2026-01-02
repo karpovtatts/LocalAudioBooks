@@ -15,23 +15,33 @@ export function LibraryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [bookProgresses, setBookProgresses] = useState<Map<string, number>>(new Map());
   
-  // Загрузка прогресса для всех книг
+  // Загрузка прогресса для всех книг (оптимизировано: загружаем только при изменении списка книг)
   React.useEffect(() => {
     const loadProgresses = async () => {
       const progresses = new Map<string, number>();
-      for (const book of books) {
+      // Используем Promise.all для параллельной загрузки прогресса
+      const progressPromises = books.map(async (book) => {
         const progress = await getBookProgress(book.id);
         if (progress) {
-          progresses.set(book.id, progress.position);
+          return { bookId: book.id, position: progress.position };
         }
-      }
+        return null;
+      });
+      
+      const results = await Promise.all(progressPromises);
+      results.forEach((result) => {
+        if (result) {
+          progresses.set(result.bookId, result.position);
+        }
+      });
+      
       setBookProgresses(progresses);
     };
     
     if (books.length > 0) {
       loadProgresses();
     }
-  }, [books, getBookProgress]);
+  }, [books.length, getBookProgress]); // Зависимость только от длины массива для оптимизации
   
   // Фильтрация книг по поисковому запросу
   const filteredBooks = useMemo(() => {

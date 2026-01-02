@@ -134,7 +134,11 @@ export function PlayerScreen() {
           
           {/* Ползунок прогресса */}
           <div className="mb-6">
+            <label htmlFor="progress-slider" className="sr-only">
+              Прогресс воспроизведения
+            </label>
             <input
+              id="progress-slider"
               type="range"
               min="0"
               max={duration || 0}
@@ -147,8 +151,13 @@ export function PlayerScreen() {
               style={{
                 background: `linear-gradient(to right, #2563eb 0%, #2563eb ${(currentPosition / (duration || 1)) * 100}%, #e5e7eb ${(currentPosition / (duration || 1)) * 100}%, #e5e7eb 100%)`,
               }}
+              aria-label="Прогресс воспроизведения"
+              aria-valuemin={0}
+              aria-valuemax={duration || 0}
+              aria-valuenow={currentPosition}
+              aria-valuetext={`${formatTime(currentPosition)} из ${formatTime(duration)}`}
             />
-            <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-1" aria-hidden="true">
               <span>{formatTime(currentPosition)}</span>
               <span>{formatTime(duration)}</span>
             </div>
@@ -159,6 +168,8 @@ export function PlayerScreen() {
             <button
               onClick={togglePlayPause}
               className="w-20 h-20 rounded-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white flex items-center justify-center text-4xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              aria-label={playerState?.isPlaying ? 'Пауза' : 'Воспроизведение'}
+              aria-pressed={playerState?.isPlaying}
             >
               {playerState?.isPlaying ? '⏸' : '▶'}
             </button>
@@ -248,10 +259,11 @@ export function PlayerScreen() {
           
           {/* Громкость */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="volume-slider" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Громкость: {Math.round(volume * 100)}%
             </label>
             <input
+              id="volume-slider"
               type="range"
               min="0"
               max="1"
@@ -259,6 +271,11 @@ export function PlayerScreen() {
               value={volume}
               onChange={handleVolumeChange}
               className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              aria-label="Громкость"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(volume * 100)}
+              aria-valuetext={`${Math.round(volume * 100)}%`}
             />
           </div>
         </Card>

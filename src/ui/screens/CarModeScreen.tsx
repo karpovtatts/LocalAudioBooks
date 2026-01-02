@@ -176,6 +176,8 @@ export function CarModeScreen() {
           style={{
             minHeight: '25vh', // Минимум 25% высоты экрана
           }}
+          aria-label={playerState?.isPlaying ? 'Пауза' : 'Воспроизведение'}
+          aria-pressed={playerState?.isPlaying}
         >
           {playerState?.isPlaying ? '⏸' : '▶'}
         </button>

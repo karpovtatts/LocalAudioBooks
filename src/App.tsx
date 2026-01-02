@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { AppProvider, useApp, OfflineIndicator } from './ui';
-import { LibraryScreen } from './ui/screens/LibraryScreen';
-import { PlayerScreen } from './ui/screens/PlayerScreen';
-import { CarModeScreen } from './ui/screens/CarModeScreen';
-import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { saveProgress as savePlayerProgress } from './player';
+
+// Ленивая загрузка экранов для оптимизации производительности
+const LibraryScreen = lazy(() => import('./ui/screens/LibraryScreen').then(m => ({ default: m.LibraryScreen })));
+const PlayerScreen = lazy(() => import('./ui/screens/PlayerScreen').then(m => ({ default: m.PlayerScreen })));
+const CarModeScreen = lazy(() => import('./ui/screens/CarModeScreen').then(m => ({ default: m.CarModeScreen })));
+const SettingsScreen = lazy(() => import('./ui/screens/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 function AppContent() {
   const { currentScreen, settings } = useApp();
@@ -39,19 +41,51 @@ function AppContent() {
   
   // Если включён Car Mode и открыт плеер, показываем Car Mode экран
   if (settings?.carModeEnabled && currentScreen === 'player') {
-    return <CarModeScreen />;
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <CarModeScreen />
+      </Suspense>
+    );
   }
   
   switch (currentScreen) {
     case 'library':
-      return <LibraryScreen />;
+      return (
+        <Suspense fallback={<LoadingScreen />}>
+          <LibraryScreen />
+        </Suspense>
+      );
     case 'player':
-      return <PlayerScreen />;
+      return (
+        <Suspense fallback={<LoadingScreen />}>
+          <PlayerScreen />
+        </Suspense>
+      );
     case 'settings':
-      return <SettingsScreen />;
+      return (
+        <Suspense fallback={<LoadingScreen />}>
+          <SettingsScreen />
+        </Suspense>
+      );
     default:
-      return <LibraryScreen />;
+      return (
+        <Suspense fallback={<LoadingScreen />}>
+          <LibraryScreen />
+        </Suspense>
+      );
   }
+}
+
+// Компонент загрузки
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-400">Загрузка...</p>
+      </div>
+    </div>
+  );
 }
 
 function App() {
