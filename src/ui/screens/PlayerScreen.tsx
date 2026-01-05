@@ -2,14 +2,12 @@
  * Экран обычного плеера - воспроизведение, перемотка, управление
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../AppContext';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { formatTime } from '../../utils';
 import {
-  play,
-  pause,
   togglePlayPause,
   seek,
   skipBackward,
@@ -17,8 +15,64 @@ import {
   setSpeed,
   setVolume,
   getCurrentPosition,
-  getDuration,
 } from '../../player';
+
+// Утилита для вибрации (с проверкой поддержки)
+function vibrate(pattern: number | number[]): void {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(pattern);
+  }
+}
+
+// Хук для обработки жестов свайпа
+function useSwipeGesture(
+  onSwipeLeft: () => void,
+  onSwipeRight: () => void,
+  threshold: number = 50
+) {
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchEndRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    touchEndRef.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchEndRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartRef.current || !touchEndRef.current) return;
+
+    const deltaX = touchEndRef.current.x - touchStartRef.current.x;
+    const deltaY = touchEndRef.current.y - touchStartRef.current.y;
+    const absDeltaX = Math.abs(deltaX);
+    const absDeltaY = Math.abs(deltaY);
+
+    // Проверяем, что это горизонтальный свайп (не вертикальный)
+    if (absDeltaX > absDeltaY && absDeltaX > threshold) {
+      if (deltaX > 0) {
+        // Свайп вправо
+        onSwipeRight();
+      } else {
+        // Свайп влево
+        onSwipeLeft();
+      }
+    }
+
+    touchStartRef.current = null;
+    touchEndRef.current = null;
+  };
+
+  return {
+    onTouchStart: handleTouchStart,
+    onTouchMove: handleTouchMove,
+    onTouchEnd: handleTouchEnd,
+  };
+}
 
 export function PlayerScreen() {
   const { currentBook, playerState, settings, setCurrentScreen, updateSettings } = useApp();
@@ -60,6 +114,25 @@ export function PlayerScreen() {
   
   const skipInterval = settings?.preferredSkipInterval || 30;
   
+  // Обработчики для жестов свайпа
+  const handleSwipeLeft = () => {
+    vibrate(50); // Короткая вибрация
+    skipForward(skipInterval);
+  };
+  
+  const handleSwipeRight = () => {
+    vibrate(50); // Короткая вибрация
+    skipBackward(skipInterval);
+  };
+  
+  const swipeHandlers = useSwipeGesture(handleSwipeLeft, handleSwipeRight);
+  
+  // Обработчик нажатия кнопки с вибрацией
+  const handleButtonClick = (callback: () => void) => {
+    vibrate(50); // Короткая вибрация при нажатии
+    callback();
+  };
+  
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPosition = parseFloat(e.target.value);
     setCurrentPosition(newPosition);
@@ -91,7 +164,10 @@ export function PlayerScreen() {
   };
   
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div 
+      className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8"
+      {...swipeHandlers}
+    >
       <div className="container mx-auto px-4 max-w-2xl">
         <div className="mb-6 flex justify-between">
           <Button
@@ -163,11 +239,15 @@ export function PlayerScreen() {
             </div>
           </div>
           
-          {/* Центральная кнопка Play/Pause */}
+          {/* Центральная кнопка Play/Pause - крупная и контрастная */}
           <div className="flex justify-center mb-6">
             <button
-              onClick={togglePlayPause}
-              className="w-20 h-20 rounded-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white flex items-center justify-center text-4xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              onClick={() => handleButtonClick(togglePlayPause)}
+              className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white flex items-center justify-center text-6xl md:text-7xl focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-offset-2 transition-colors shadow-2xl active:scale-95"
+              style={{
+                minHeight: '128px',
+                minWidth: '128px',
+              }}
               aria-label={playerState?.isPlaying ? 'Пауза' : 'Воспроизведение'}
               aria-pressed={playerState?.isPlaying}
             >
@@ -175,55 +255,31 @@ export function PlayerScreen() {
             </button>
           </div>
           
-          {/* Кнопки перемотки */}
+          {/* Кнопки перемотки - крупные и контрастные */}
           <div className="mb-6">
-            <div className="flex justify-center gap-2 mb-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => skipBackward(15)}
-              >
-                ← 15 сек
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => skipBackward(30)}
-              >
-                ← 30 сек
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => skipBackward(60)}
-              >
-                ← 60 сек
-              </Button>
+            <div className="flex justify-center gap-3 mb-3">
+              {([15, 30, 60] as const).map((seconds) => (
+                <button
+                  key={`back-${seconds}`}
+                  onClick={() => handleButtonClick(() => skipBackward(seconds))}
+                  className="px-6 py-4 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 active:bg-gray-600 dark:active:bg-gray-500 text-white text-lg font-bold rounded-lg min-w-[100px] min-h-[60px] transition-colors focus:outline-none focus:ring-4 focus:ring-gray-500 shadow-lg"
+                >
+                  ← {seconds} сек
+                </button>
+              ))}
             </div>
-            <div className="flex justify-center gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => skipForward(15)}
-              >
-                15 сек →
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => skipForward(30)}
-              >
-                30 сек →
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => skipForward(60)}
-              >
-                60 сек →
-              </Button>
+            <div className="flex justify-center gap-3 mb-3">
+              {([15, 30, 60] as const).map((seconds) => (
+                <button
+                  key={`forward-${seconds}`}
+                  onClick={() => handleButtonClick(() => skipForward(seconds))}
+                  className="px-6 py-4 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 active:bg-gray-600 dark:active:bg-gray-500 text-white text-lg font-bold rounded-lg min-w-[100px] min-h-[60px] transition-colors focus:outline-none focus:ring-4 focus:ring-gray-500 shadow-lg"
+                >
+                  {seconds} сек →
+                </button>
+              ))}
             </div>
-            <div className="text-center mt-2">
+            <div className="text-center mt-3">
               <button
                 onClick={() => {
                   const intervals: Array<15 | 30 | 60> = [15, 30, 60];
@@ -235,6 +291,9 @@ export function PlayerScreen() {
               >
                 Текущий интервал: {skipInterval} сек (нажмите для смены)
               </button>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Свайп влево/вправо для перемотки
+              </p>
             </div>
           </div>
           
