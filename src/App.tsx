@@ -5,11 +5,10 @@ import { saveProgress as savePlayerProgress } from './player';
 // Ленивая загрузка экранов для оптимизации производительности
 const LibraryScreen = lazy(() => import('./ui/screens/LibraryScreen').then(m => ({ default: m.LibraryScreen })));
 const PlayerScreen = lazy(() => import('./ui/screens/PlayerScreen').then(m => ({ default: m.PlayerScreen })));
-const CarModeScreen = lazy(() => import('./ui/screens/CarModeScreen').then(m => ({ default: m.CarModeScreen })));
 const SettingsScreen = lazy(() => import('./ui/screens/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 function AppContent() {
-  const { currentScreen, settings } = useApp();
+  const { currentScreen } = useApp();
   
   // Сохранение прогресса при закрытии приложения
   useEffect(() => {
@@ -38,15 +37,6 @@ function AppContent() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
-  
-  // Если включён Car Mode и открыт плеер, показываем Car Mode экран
-  if (settings?.carModeEnabled && currentScreen === 'player') {
-    return (
-      <Suspense fallback={<LoadingScreen />}>
-        <CarModeScreen />
-      </Suspense>
-    );
-  }
   
   switch (currentScreen) {
     case 'library':

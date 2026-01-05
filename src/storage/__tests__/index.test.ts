@@ -187,10 +187,10 @@ describe('Storage: Settings', () => {
 
     it('должен объединять настройки с существующими', async () => {
       await saveSettings({ preferredSkipInterval: 60 });
-      await saveSettings({ carModeEnabled: true });
+      await saveSettings({ playbackSpeed: 1.5 });
       const result = await loadSettings();
       expect(result.preferredSkipInterval).toBe(60);
-      expect(result.carModeEnabled).toBe(true);
+      expect(result.playbackSpeed).toBe(1.5);
     });
   });
 
@@ -199,7 +199,6 @@ describe('Storage: Settings', () => {
       const result = await loadSettings();
       expect(result).toEqual({
         preferredSkipInterval: 30,
-        carModeEnabled: false,
         playbackSpeed: 1.0,
       });
     });
@@ -207,13 +206,11 @@ describe('Storage: Settings', () => {
     it('должен загружать сохранённые настройки', async () => {
       await saveSettings({
         preferredSkipInterval: 60,
-        carModeEnabled: true,
         playbackSpeed: 1.5,
       });
       const result = await loadSettings();
       expect(result).toEqual({
         preferredSkipInterval: 60,
-        carModeEnabled: true,
         playbackSpeed: 1.5,
       });
     });

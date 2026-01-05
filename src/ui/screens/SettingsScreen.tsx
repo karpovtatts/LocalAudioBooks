@@ -20,10 +20,6 @@ export function SettingsScreen() {
     );
   }
   
-  const handleCarModeToggle = () => {
-    updateSettings({ carModeEnabled: !settings.carModeEnabled });
-  };
-  
   const handleSkipIntervalChange = (interval: 15 | 30 | 60) => {
     updateSettings({ preferredSkipInterval: interval });
   };
@@ -49,32 +45,6 @@ export function SettingsScreen() {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Настройки
           </h2>
-          
-          {/* Car Mode */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-                Режим вождения (Car Mode)
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Упрощённый интерфейс с крупными кнопками для управления в автомобиле
-              </p>
-            </div>
-            <button
-              onClick={handleCarModeToggle}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                settings.carModeEnabled
-                  ? 'bg-blue-600 dark:bg-blue-500'
-                  : 'bg-gray-200 dark:bg-gray-700'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  settings.carModeEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
           
           {/* Предпочтительный интервал перемотки */}
           <div>

@@ -9,5 +9,4 @@ export { Input } from './components/Input';
 export { OfflineIndicator } from './components/OfflineIndicator';
 export { LibraryScreen } from './screens/LibraryScreen';
 export { PlayerScreen } from './screens/PlayerScreen';
-export { CarModeScreen } from './screens/CarModeScreen';
 export { SettingsScreen } from './screens/SettingsScreen';

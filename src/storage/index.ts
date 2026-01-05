@@ -43,7 +43,6 @@ export interface Progress {
 
 export interface Settings {
   preferredSkipInterval: 15 | 30 | 60;
-  carModeEnabled: boolean;
   playbackSpeed: number;
 }
 
@@ -56,7 +55,6 @@ export interface SelectedFolder {
 // Настройки по умолчанию
 const DEFAULT_SETTINGS: Settings = {
   preferredSkipInterval: 30,
-  carModeEnabled: false,
   playbackSpeed: 1.0,
 };
 
@@ -320,7 +318,6 @@ export async function saveSettings(settings: Partial<Settings>): Promise<void> {
     // Сохраняем каждую настройку отдельно
     const settingsToSave = [
       { key: 'preferredSkipInterval', value: mergedSettings.preferredSkipInterval },
-      { key: 'carModeEnabled', value: mergedSettings.carModeEnabled },
       { key: 'playbackSpeed', value: mergedSettings.playbackSpeed },
     ];
     
@@ -360,9 +357,9 @@ export async function loadSettings(): Promise<Settings> {
         }
         
         // Преобразуем массив в объект настроек
+        // Игнорируем устаревшие поля (например, carModeEnabled)
         const settings: Settings = {
           preferredSkipInterval: items.find((item) => item.key === 'preferredSkipInterval')?.value ?? DEFAULT_SETTINGS.preferredSkipInterval,
-          carModeEnabled: items.find((item) => item.key === 'carModeEnabled')?.value ?? DEFAULT_SETTINGS.carModeEnabled,
           playbackSpeed: items.find((item) => item.key === 'playbackSpeed')?.value ?? DEFAULT_SETTINGS.playbackSpeed,
         };
         
