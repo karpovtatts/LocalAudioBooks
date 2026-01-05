@@ -138,40 +138,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Открытие книги и загрузка в плеер
   const openBook = useCallback(async (book: Book, fileHandle?: FileSystemFileHandle | File) => {
     try {
+      console.log('=== Начало открытия книги ===', book.title);
+      
       let handle: FileSystemFileHandle | File;
       
       // Если handle передан, используем его
       if (fileHandle) {
         handle = fileHandle;
+        console.log('Используем переданный handle');
       } else {
         // Иначе пытаемся найти в сохранённых handles
         const savedHandle = bookHandlesRef.current.get(book.id);
         if (savedHandle) {
           handle = savedHandle;
+          console.log('Используем сохранённый handle');
         } else {
           // Если handle не найден, запрашиваем у пользователя выбор файла
-          // Это временное решение для MVP - в будущем можно доработать
+          console.log('Запрашиваем выбор файла у пользователя');
           const file = await selectFileForBook(book);
           if (!file) {
+            console.log('Пользователь отменил выбор файла');
             return; // Пользователь отменил выбор
           }
           handle = file;
+          console.log('Файл выбран:', file.name);
         }
       }
       
       // Сохраняем handle, если это FileSystemFileHandle
       if (handle instanceof FileSystemFileHandle) {
         bookHandlesRef.current.set(book.id, handle);
+        console.log('Handle сохранён');
       }
       
       // Загружаем книгу в плеер
+      console.log('Загрузка книги в плеер...');
       await loadBook(book, handle);
+      console.log('Книга успешно загружена в плеер');
       
-      // Устанавливаем текущую книгу и переключаемся на экран плеера
+      // Устанавливаем текущую книгу ПЕРЕД переключением экрана
+      console.log('Устанавливаем текущую книгу:', book.title);
       setCurrentBook(book);
-      setCurrentScreen('player');
+      
+      // Используем setTimeout для гарантии обновления состояния
+      setTimeout(() => {
+        console.log('Переключаемся на экран плеера');
+        setCurrentScreen('player');
+        console.log('=== Книга открыта, экран переключен на player ===');
+      }, 0);
     } catch (error) {
-      console.error('Ошибка открытия книги:', error);
+      console.error('=== ОШИБКА при открытии книги ===', error);
       alert(`Ошибка открытия книги: ${error instanceof Error ? error.message : String(error)}`);
     }
   }, [selectFileForBook]);
