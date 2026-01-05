@@ -5,10 +5,10 @@ import path from 'path';
 
 export default defineConfig({
   server: {
-    host: 'localhost',
+    host: '0.0.0.0', // Слушаем на всех интерфейсах
     port: 5173,
     strictPort: false, // Если порт занят, попробует другой
-    open: true, // Автоматически откроет браузер
+    open: false, // Не открываем автоматически
   },
   plugins: [
     react(),

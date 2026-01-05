@@ -179,7 +179,8 @@ export function LibraryScreen() {
                 <Card
                   key={book.id}
                   onClick={() => openBook(book)}
-                  className="overflow-hidden"
+                  className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                  title="Нажмите, чтобы открыть плеер"
                 >
                   <div className="aspect-square bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                     {book.cover ? (
@@ -195,9 +196,14 @@ export function LibraryScreen() {
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1 truncate">
-                      {book.title}
-                    </h3>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-lg text-gray-900 dark:text-white truncate flex-1">
+                        {book.title}
+                      </h3>
+                      <span className="text-blue-600 dark:text-blue-400 ml-2" title="Нажмите для воспроизведения">
+                        ▶️
+                      </span>
+                    </div>
                     {book.author && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">
                         {book.author}
